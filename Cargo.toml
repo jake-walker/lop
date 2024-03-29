@@ -2,17 +2,18 @@
 name = "lop"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "A command line utility for shortening links and sharing code and files."
+authors = ["Jake Walker <hi@jakew.me>"]
+license = "MIT"
 
 [dependencies]
 anstream = "0.6.13"
 chrono = "0.4.37"
-clap = { version = "4.5.4", features = ["derive"] }
+clap = { version = "4.5.4", features = ["derive", "cargo"] }
 cli-clipboard = "0.4.0"
 dialoguer = { version = "0.11.0", default-features = false }
 owo-colors = "4.0.0"
-reqwest = { version = "0.12.2", features = ["blocking", "json"] }
+reqwest = { version = "0.12.2", features = ["blocking", "json", "multipart"] }
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"
 url = "2.5.0"

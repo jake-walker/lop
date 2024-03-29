@@ -1,4 +1,9 @@
-use std::error::Error;
+// Copyright (c) 2024 Jake Walker
+//
+// This software is released under the MIT License.
+// https://opensource.org/licenses/MIT
+
+use std::{error::Error, str::Bytes};
 
 use chrono::{DateTime, Utc};
 
@@ -17,7 +22,7 @@ pub trait ShortenService {
 }
 
 pub trait UploadService {
-  fn upload(&self, data: &[u8]) -> Result<ServiceResult, Box<dyn Error>>;
+  fn upload(&self, data: Vec<u8>, file_name: String, mime_type: String) -> Result<ServiceResult, Box<dyn Error>>;
 }
 
 pub trait PasteService {
