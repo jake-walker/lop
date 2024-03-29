@@ -1,5 +1,7 @@
-use std::error::Error;
+use std::{error::Error, fs};
 use anstream::println;
+use cli_clipboard;
+use dialoguer::{theme::ColorfulTheme, Confirm};
 use owo_colors::OwoColorize as _;
 use clap::{Parser, Subcommand};
 use lop::services::{vh7::Vh7Service, PasteService, Service, ServiceResult, ShortenService};
@@ -20,8 +22,15 @@ enum Commands {
         url: String
     },
     Paste {
-        code: String
-    }
+        #[arg(short, long, help = "The path to a file to create a paste from.")]
+        filename: Option<String>,
+
+        #[arg(short, long, help = "A string to create a paste from.")]
+        code: Option<String>,
+
+        #[arg(short = 'y', help = "Skip confirmation before pasting from clipboard or file.")]
+        force: bool
+    },
 }
 
 fn handle_error(error: Box<dyn Error>) {
@@ -72,8 +81,29 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             return Ok(())
         },
-        Some(Commands::Paste { code }) => {
-            if let Err(err) = paste(code, cli.quiet) {
+        Some(Commands::Paste { filename, code, force }) => {
+            let content = {
+                if let Some(filename) = filename {
+                    fs::read_to_string(filename)?
+                } else if let Some(code) = code {
+                    code.to_string()
+                } else {
+                    cli_clipboard::get_contents()?
+                }
+            };
+
+            if !force && code.is_none() {
+                println!("{}\n{}", "You are about to send the following:".blue().bold(), content.blue().italic());
+                let confirmation = Confirm::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Do you want to continue?")
+                    .interact()?;
+
+                if !confirmation {
+                    return Ok(());
+                }
+            }
+
+            if let Err(err) = paste(&content, cli.quiet) {
                 handle_error(err);
             }
 
