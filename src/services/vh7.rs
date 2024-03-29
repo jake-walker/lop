@@ -48,7 +48,7 @@ impl Service for Vh7Service {
 }
 
 impl ShortenService for Vh7Service {
-  fn shorten(&self, url: &str) -> Result<super::ShortenResult, Box<dyn Error>> {
+  fn shorten(&self, url: &str) -> Result<super::ServiceResult, Box<dyn Error>> {
     let form_data = [("url", url)];
 
     let shorten_route = self.api_base.join("shorten")?;
@@ -58,7 +58,7 @@ impl ShortenService for Vh7Service {
 
     let res_data = res.json::<Vh7ShortenResult>()?;
 
-    Ok(super::ShortenResult {
+    Ok(super::ServiceResult {
       url: self.api_base.join("..")?.join(&res_data.id)?.to_string(),
       expires: res_data.expires_at.and_then(|d| Some(DateTime::parse_from_rfc3339(&d).ok()?.to_utc()))
     })
@@ -66,7 +66,7 @@ impl ShortenService for Vh7Service {
 }
 
 impl PasteService for Vh7Service {
-  fn paste(&self, code: &str, _language: &str) -> Result<super::PasteResult, Box<dyn Error>> {
+  fn paste(&self, code: &str, _language: &str) -> Result<super::ServiceResult, Box<dyn Error>> {
     let form_data = [
       ("code", code),
       // ("language", language)
@@ -79,7 +79,7 @@ impl PasteService for Vh7Service {
 
     let res_data = res.json::<Vh7PasteResult>()?;
 
-    Ok(super::PasteResult {
+    Ok(super::ServiceResult {
       url: self.api_base.join("..")?.join(&res_data.id)?.to_string(),
       expires: res_data.expires_at.and_then(|d| Some(DateTime::parse_from_rfc3339(&d).ok()?.to_utc()))
     })
