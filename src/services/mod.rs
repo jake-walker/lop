@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-use std::{error::Error, str::Bytes};
+use std::error::Error;
 
 use chrono::{DateTime, Utc};
 

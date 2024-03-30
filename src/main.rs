@@ -15,7 +15,7 @@ use lop::services::{vh7::Vh7Service, PasteService, Service, ServiceResult, Short
 #[command(version, about, long_about)]
 struct Cli {
     #[command(subcommand)]
-    command: Option<Commands>,
+    command: Commands,
 
     #[arg(short, global = true, help = "Only show the final output")]
     quiet: bool,
@@ -100,14 +100,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let srv = Vh7Service::new()?;
 
     match &cli.command {
-        Some(Commands::Shorten { url }) => {
+        Commands::Shorten { url } => {
             if let Err(err) = shorten(&srv, url, cli.quiet, cli.qr_code) {
                 handle_error(err);
             }
-
-            return Ok(())
         },
-        Some(Commands::Paste { filename, code, force }) => {
+        Commands::Paste { filename, code, force } => {
             let content = {
                 if let Some(filename) = filename {
                     fs::read_to_string(filename)?
@@ -132,20 +130,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             if let Err(err) = paste(&srv, &content, cli.quiet, cli.qr_code) {
                 handle_error(err);
             }
-
-            return Ok(())
         },
-        Some(Commands::Upload { filename }) => {
+        Commands::Upload { filename } => {
             if let Err(err) = upload(&srv, filename, cli.quiet, cli.qr_code) {
                 handle_error(err);
             }
-
-            return Ok(())
         }
-        None => {}
     }
-
-    println!("What's going on here!");
 
     Ok(())
 }
