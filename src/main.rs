@@ -5,11 +5,12 @@
 
 use std::{error::Error, fs};
 use anstream::println;
+use chrono::Duration;
 use cli_clipboard;
 use dialoguer::{theme::ColorfulTheme, Confirm};
 use owo_colors::OwoColorize as _;
 use clap::{Parser, Subcommand};
-use lop::services::{vh7::Vh7Service, PasteService, Service, ServiceResult, ShortenService, UploadService};
+use lop::services::{vh7::Vh7Service, PasteService, Service, ServiceOptions, ServiceResult, ShortenService, UploadService};
 
 #[derive(Parser)]
 #[command(version, about, long_about)]
@@ -21,7 +22,13 @@ struct Cli {
     quiet: bool,
 
     #[arg(short = 'Q', long = "qr", global = true, help = "Show the output as a QR code")]
-    qr_code: bool
+    qr_code: bool,
+
+    #[arg(short = 'e', long = "expire", global = true, help = "Expire after the given number of days")]
+    expire_days: Option<i64>,
+
+    #[arg(short = 'E', long = "no-expire", global = true, help = "Do not expire")]
+    no_expire: bool
 }
 
 #[derive(Subcommand)]
@@ -70,25 +77,25 @@ fn print_result(result: &ServiceResult, quiet: bool, qr: bool) {
     }
 }
 
-fn shorten(srv: &impl ShortenService, url: &str, quiet: bool, qr: bool) -> Result<(), Box<dyn Error>> {
-    let res = srv.shorten(url)?;
+fn shorten(srv: &impl ShortenService, url: &str, quiet: bool, qr: bool, opts: &ServiceOptions) -> Result<(), Box<dyn Error>> {
+    let res = srv.shorten(opts, url)?;
 
     print_result(&res, quiet, qr);
 
     Ok(())
 }
 
-fn paste(srv: &impl PasteService, code: &str, quiet: bool, qr: bool) -> Result<(), Box<dyn Error>> {
-    let res = srv.paste(code, "")?;
+fn paste(srv: &impl PasteService, code: &str, quiet: bool, qr: bool, opts: &ServiceOptions) -> Result<(), Box<dyn Error>> {
+    let res = srv.paste(opts, code, "")?;
 
     print_result(&res, quiet, qr);
 
     Ok(())
 }
 
-fn upload(srv: &impl UploadService, filename: &str, quiet: bool, qr: bool) -> Result<(), Box<dyn Error>> {
+fn upload(srv: &impl UploadService, filename: &str, quiet: bool, qr: bool, opts: &ServiceOptions) -> Result<(), Box<dyn Error>> {
     let file = fs::read(filename)?;
-    let res = srv.upload(file, filename.to_string(), "text/plain".to_string())?;
+    let res = srv.upload(opts, file, filename.to_string(), "text/plain".to_string())?;
 
     print_result(&res, quiet, qr);
 
@@ -99,9 +106,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
     let srv = Vh7Service::new()?;
 
+    let mut opts = ServiceOptions {
+        expiry: Some(Duration::days(29))
+    };
+
+    if cli.no_expire {
+        opts.expiry = None;
+    }
+
+    if let Some(expire_days_value) = cli.expire_days {
+        opts.expiry = Some(Duration::days(expire_days_value));
+    }
+
     match &cli.command {
         Commands::Shorten { url } => {
-            if let Err(err) = shorten(&srv, url, cli.quiet, cli.qr_code) {
+            if let Err(err) = shorten(&srv, url, cli.quiet, cli.qr_code, &opts) {
                 handle_error(err);
             }
         },
@@ -127,12 +146,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
 
-            if let Err(err) = paste(&srv, &content, cli.quiet, cli.qr_code) {
+            if let Err(err) = paste(&srv, &content, cli.quiet, cli.qr_code, &opts) {
                 handle_error(err);
             }
         },
         Commands::Upload { filename } => {
-            if let Err(err) = upload(&srv, filename, cli.quiet, cli.qr_code) {
+            if let Err(err) = upload(&srv, filename, cli.quiet, cli.qr_code, &opts) {
                 handle_error(err);
             }
         }

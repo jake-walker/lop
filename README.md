@@ -29,7 +29,7 @@ lop upload -Q ./photos.zip
 - [x] Generate QR codes for outputs
 - [ ] Upload multiple files (zipping as required)
 - [ ] Take inputs from stdin
-- [ ] Set expiry date
+- [x] Set expiry date
 - [ ] Encrypt
 
 ## Contributing
