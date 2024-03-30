@@ -18,7 +18,10 @@ struct Cli {
     command: Option<Commands>,
 
     #[arg(short, global = true, help = "Only show the final output")]
-    quiet: bool
+    quiet: bool,
+
+    #[arg(short = 'Q', long = "qr", global = true, help = "Show the output as a QR code")]
+    qr_code: bool
 }
 
 #[derive(Subcommand)]
@@ -48,8 +51,14 @@ fn handle_error(error: Box<dyn Error>) {
     println!("{} {}", "Something has gone wrong:".red().bold(), error.to_string().red());
 }
 
-fn print_result(result: &ServiceResult, quiet: bool) {
-    if quiet {
+fn print_result(result: &ServiceResult, quiet: bool, qr: bool) {
+    if qr {
+        if qr2term::print_qr(result.url.clone()).is_err() {
+            println!("{}", "Failed to render QR code".red());
+        };
+    }
+
+    if quiet && !qr {
         println!("{}", result.url);
         return;
     }
@@ -61,27 +70,27 @@ fn print_result(result: &ServiceResult, quiet: bool) {
     }
 }
 
-fn shorten(srv: &impl ShortenService, url: &str, quiet: bool) -> Result<(), Box<dyn Error>> {
+fn shorten(srv: &impl ShortenService, url: &str, quiet: bool, qr: bool) -> Result<(), Box<dyn Error>> {
     let res = srv.shorten(url)?;
 
-    print_result(&res, quiet);
+    print_result(&res, quiet, qr);
 
     Ok(())
 }
 
-fn paste(srv: &impl PasteService, code: &str, quiet: bool) -> Result<(), Box<dyn Error>> {
+fn paste(srv: &impl PasteService, code: &str, quiet: bool, qr: bool) -> Result<(), Box<dyn Error>> {
     let res = srv.paste(code, "")?;
 
-    print_result(&res, quiet);
+    print_result(&res, quiet, qr);
 
     Ok(())
 }
 
-fn upload(srv: &impl UploadService, filename: &str, quiet: bool) -> Result<(), Box<dyn Error>> {
+fn upload(srv: &impl UploadService, filename: &str, quiet: bool, qr: bool) -> Result<(), Box<dyn Error>> {
     let file = fs::read(filename)?;
     let res = srv.upload(file, filename.to_string(), "text/plain".to_string())?;
 
-    print_result(&res, quiet);
+    print_result(&res, quiet, qr);
 
     Ok(())
 }
@@ -92,7 +101,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match &cli.command {
         Some(Commands::Shorten { url }) => {
-            if let Err(err) = shorten(&srv, url, cli.quiet) {
+            if let Err(err) = shorten(&srv, url, cli.quiet, cli.qr_code) {
                 handle_error(err);
             }
 
@@ -120,14 +129,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
 
-            if let Err(err) = paste(&srv, &content, cli.quiet) {
+            if let Err(err) = paste(&srv, &content, cli.quiet, cli.qr_code) {
                 handle_error(err);
             }
 
             return Ok(())
         },
         Some(Commands::Upload { filename }) => {
-            if let Err(err) = upload(&srv, filename, cli.quiet) {
+            if let Err(err) = upload(&srv, filename, cli.quiet, cli.qr_code) {
                 handle_error(err);
             }
 
