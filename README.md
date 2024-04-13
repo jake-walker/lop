@@ -4,6 +4,14 @@ A command line utility for shortening links and sharing code and files.
 
 ## Installation
 
+### Homebrew (Linux/macOS)
+
+```bash
+brew install jake-walker/tap/lop
+```
+
+### Cargo
+
 ```bash
 cargo install --git https://github.com/jake-walker/lop.git
 ```
